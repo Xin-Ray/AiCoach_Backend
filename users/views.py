@@ -1,24 +1,35 @@
 from django.shortcuts import render
-
+from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import User
 import json
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import authenticate
+from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.authentication import BasicAuthentication
 
-@csrf_exempt
-def register(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        email = data.get('email')
-        password = data.get('password')
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import User
+from .serializers import *
 
-        if not email or not password:
-            return JsonResponse({'error': 'Email and password are required'}, status=400)
-        
-        if User.objects.filter(email=email).exists():
-            return JsonResponse({'error': 'Email already exists'}, status=400)
-        
-        user = User.objects.create(email=email, password=password)
-        return JsonResponse({'message': 'User registered successfully'}, status=201)
+from django.contrib.auth.backends import ModelBackend
+from django.db.models import Q
+from .models import User
 
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+class CustomBackend (ModelBackend):
+    # 方法重写
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        try:
+            print("try")
+            user = User.objects.get(email = username)#|Q ()
+            print("user")
+            if user.check_password(password):#把密码同user数据库内进行比较
+                print("check_password")
+                return user
+        except Exception as e:
+            return None
